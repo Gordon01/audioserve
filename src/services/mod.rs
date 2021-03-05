@@ -35,13 +35,14 @@ use url::form_urlencoded;
 pub mod audio_folder;
 pub mod audio_meta;
 pub mod auth;
+pub mod medialibrary;
 #[cfg(feature = "shared-positions")]
 pub mod position;
 pub mod resp;
 pub mod search;
 mod subs;
 pub mod transcode;
-mod types;
+pub mod types;
 
 const APP_STATIC_FILES_CACHE_AGE: u32 = 30 * 24 * 3600;
 const FOLDER_INFO_FILES_CACHE_AGE: u32 = 24 * 3600;

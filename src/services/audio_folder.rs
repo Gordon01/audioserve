@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use super::audio_meta::{get_audio_properties, Chapter, MediaInfo};
 use super::transcode::TimeSpan;
+use super::medialibrary::paths::{list_medialibrary, is_lib_path, insert_mediadb};
 use super::types::*;
 use crate::config::get_config;
 use crate::util::{get_real_file_type, guess_mime_type, os_to_string};
@@ -17,12 +18,14 @@ pub fn list_dir<P: AsRef<Path>, P2: AsRef<Path>>(
     ordering: FoldersOrdering,
 ) -> Result<AudioFolder, io::Error> {
     let full_path = base_dir.as_ref().join(&dir_path);
+    let is_root = dir_path.as_ref().to_str().unwrap().len() == 0;
     match get_dir_type(&full_path)? {
-        DirType::Dir => list_dir_dir(base_dir, full_path, ordering),
+        DirType::Dir => list_dir_dir(base_dir, full_path, ordering, is_root),
         DirType::File {
             chapters,
             audio_meta,
         } => list_dir_file(base_dir, full_path, audio_meta, chapters),
+        DirType::Library => list_medialibrary(dir_path.as_ref(), ordering),
         DirType::Other => Err(io::Error::new(
             io::ErrorKind::Other,
             "Not folder or chapterised audio file",
@@ -36,6 +39,7 @@ enum DirType {
         audio_meta: AudioMeta,
     },
     Dir,
+    Library,
     Other,
 }
 
@@ -67,6 +71,9 @@ fn split_chapters(dur: u32) -> Vec<Chapter> {
 
 fn get_dir_type<P: AsRef<Path>>(path: P) -> Result<DirType, io::Error> {
     let path = path.as_ref();
+    if is_lib_path(path) {
+        return Ok(DirType::Library);
+    }
     let meta = if cfg!(feature = "symlinks") {
         path.metadata()?
     } else {
@@ -256,6 +263,7 @@ fn list_dir_dir<P: AsRef<Path>>(
     base_dir: P,
     full_path: PathBuf,
     ordering: FoldersOrdering,
+    is_root: bool
 ) -> Result<AudioFolder, io::Error> {
     match fs::read_dir(&full_path) {
         Ok(dir_iter) => {
@@ -333,6 +341,10 @@ fn list_dir_dir<P: AsRef<Path>>(
             }
             files.sort_unstable_by(|a, b| a.name.cmp(&b.name));
             subfolders.sort_unstable_by(|a, b| a.compare_as(ordering, b));
+
+            if is_root {
+                insert_mediadb(&mut subfolders);
+            }
 
             Ok(AudioFolder {
                 files,

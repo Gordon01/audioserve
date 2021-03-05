@@ -52,6 +52,13 @@ pub struct AudioMeta {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MediaLibrary {
+    #[serde(with = "unicase_serde::unicase")]
+    pub name: UniCase<String>,
+    pub path: PathBuf,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AudioFolderShort {
     #[serde(with = "unicase_serde::unicase")]
     pub name: UniCase<String>,
@@ -91,6 +98,15 @@ impl AudioFolderShort {
                 }
             },
         })
+    }
+
+    pub fn from_label(caption: &str) -> Self {
+        AudioFolderShort {
+            name: UniCase::from(caption),
+            path: PathBuf::from("|artists"),
+            is_file: false,
+            modified: None,
+        }
     }
 
     #[cfg(feature = "search-cache")]
