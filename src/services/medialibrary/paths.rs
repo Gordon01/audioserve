@@ -1,23 +1,49 @@
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
+use super::artists::{get_artists, get_artist};
 
 use crate::services::types::*;
+
+enum PathType {
+    Artist,
+    Album,
+    Track,
+    Playlist,
+}
 
 pub fn is_lib_path(path: &Path) -> bool {
     path.to_str().unwrap().contains('|')
 }
 
-pub fn list_medialibrary(path: &Path,
-    ordering: FoldersOrdering) -> Result<AudioFolder, io::Error> {
-    let mut files = vec![];
-    let mut subfolders = vec![];
-    let mut cover = None;
-    let mut description = None;
+fn get_dir_type(path: &Path) -> PathType {
+    let path = path.to_str().unwrap();
+    let path: Vec<&str> = path.split("/").collect();
 
-    subfolders.push(AudioFolderShort::from_label("Lib item 1"));
-    subfolders.push(AudioFolderShort::from_label("Lib item 2"));
-    subfolders.push(AudioFolderShort::from_label("Lib item 3"));
+    match path.len() {
+        1 => PathType::Artist,
+        2 => PathType::Album,
+        _ => PathType::Playlist,
+    }
+}
+
+pub fn list_medialibrary(path: &Path,
+    _ordering: FoldersOrdering) -> Result<AudioFolder, io::Error> {
     
+    let files = vec![];
+    let mut subfolders = vec![];
+    let cover = None;
+    let description = None;
+
+    match get_dir_type(path) {
+        PathType::Artist => { 
+            subfolders = get_artists();
+        },
+        PathType::Album => {
+            subfolders = get_artist("Muse");
+        }
+        _ => {},
+    }
+
     Ok(AudioFolder {
         files,
         subfolders,

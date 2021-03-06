@@ -52,13 +52,6 @@ pub struct AudioMeta {
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MediaLibrary {
-    #[serde(with = "unicase_serde::unicase")]
-    pub name: UniCase<String>,
-    pub path: PathBuf,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AudioFolderShort {
     #[serde(with = "unicase_serde::unicase")]
     pub name: UniCase<String>,
