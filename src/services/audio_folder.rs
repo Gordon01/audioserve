@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 
 use super::audio_meta::{get_audio_properties, Chapter, MediaInfo};
 use super::transcode::TimeSpan;
-use super::medialibrary::paths::{list_medialibrary, is_lib_path, insert_mediadb};
+use super::medialibrary::paths::{is_lib_path, insert_mediadb};
+use super::medialibrary::items::{get_item};
 use super::types::*;
 use crate::config::get_config;
 use crate::util::{get_real_file_type, guess_mime_type, os_to_string};
@@ -25,7 +26,7 @@ pub fn list_dir<P: AsRef<Path>, P2: AsRef<Path>>(
             chapters,
             audio_meta,
         } => list_dir_file(base_dir, full_path, audio_meta, chapters),
-        DirType::Library => list_medialibrary(dir_path.as_ref(), ordering),
+        DirType::Library => get_item(dir_path.as_ref(), ordering),
         DirType::Other => Err(io::Error::new(
             io::ErrorKind::Other,
             "Not folder or chapterised audio file",

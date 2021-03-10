@@ -93,10 +93,15 @@ impl AudioFolderShort {
         })
     }
 
-    pub fn from_label(caption: &str) -> Self {
+    pub fn from_mdb_root(caption: &str) -> Self {
+        let mut capitalized = caption.chars();
+        let capitalized = match capitalized.next() {
+            None => String::new(),
+            Some(f) => f.to_uppercase().collect::<String>() + capitalized.as_str(),
+        };
         AudioFolderShort {
-            name: UniCase::from(caption),
-            path: PathBuf::from("|artists"),
+            name: UniCase::from(capitalized),
+            path: PathBuf::from(["|", caption].concat()),
             is_file: false,
             modified: None,
         }

@@ -1,3 +1,3 @@
 pub mod paths;
-pub mod artists;
+pub mod items;
 pub mod types;

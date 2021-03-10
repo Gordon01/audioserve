@@ -1,60 +1,126 @@
-use std::io;
 use std::path::{Path};
-use super::artists::{get_artists, get_artist};
 
-use crate::services::types::*;
+use crate::services::types::{AudioFolderShort};
 
-enum PathType {
+const ARTISTS: &str   = "artists";
+const ALBUMS: &str    = "albums";
+const TRACKS: &str    = "tracks";
+const PLAYLISTS: &str = "playlists";
+
+pub enum PathType {
     Artist,
     Album,
     Track,
     Playlist,
+    Other
+}
+
+pub struct LibPath {
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub track: Option<String>,
+    pub entity: PathType,
+}
+
+impl LibPath {
+    pub fn from_path(path: &Path) -> Self {
+        let path = path.to_str().unwrap();
+        let path: Vec<&str> = path[1..].split("/").collect();
+        //let entity = get_dir_type(&path);
+        let mut lib_path = LibPath { 
+            artist: None, album: None, track: None, entity: PathType::Other };
+        
+        match get_root_type(path[0]) {
+            PathType::Artist => match path.len() {
+                1  => { lib_path.entity = PathType::Artist },
+                2  => { 
+                    lib_path.artist = Some(String::from(path[1]));
+                    lib_path.entity = PathType::Artist; 
+                },
+                3  => { 
+                    lib_path.artist = Some(String::from(path[1]));
+                    lib_path.album = Some(String::from(path[2]));
+                    lib_path.entity = PathType::Album; 
+                },
+                4  => { 
+                    lib_path.artist = Some(String::from(path[1]));
+                    lib_path.album = Some(String::from(path[2]));
+                    lib_path.track = Some(String::from(path[3]));
+                    lib_path.entity = PathType::Track; 
+                },
+                _  => {},
+            },
+            PathType::Album => match path.len() {
+                1 => { lib_path.entity = PathType::Album },
+                2 => { 
+                    lib_path.album = Some(String::from(path[1]));
+                    lib_path.entity = PathType::Album; 
+                },
+                3 => { 
+                    lib_path.album = Some(String::from(path[1]));
+                    lib_path.track = Some(String::from(path[2]));
+                    lib_path.entity = PathType::Track; 
+                },
+                _ => {},
+            },
+            PathType::Track => match path.len() {
+                1 => { lib_path.entity = PathType::Track },
+                2 => { 
+                    lib_path.track = Some(String::from(path[1]));
+                    lib_path.entity = PathType::Track; 
+                },
+                _ => {},
+            },
+            _                => {},
+        };
+
+        lib_path
+
+        /*
+        LibPath { 
+            artist: String::from(""),
+            album: String::from("Showbiz"),
+            track: String::from("Uno.mp3"),
+            entity: entity,
+        }
+        */
+    }
 }
 
 pub fn is_lib_path(path: &Path) -> bool {
     path.to_str().unwrap().contains('|')
 }
 
-fn get_dir_type(path: &Path) -> PathType {
-    let path = path.to_str().unwrap();
-    let path: Vec<&str> = path.split("/").collect();
-
-    match path.len() {
-        1 => PathType::Artist,
-        2 => PathType::Album,
-        _ => PathType::Playlist,
+fn get_root_type(part: &str) -> PathType {
+    match part {
+        ARTISTS => PathType::Artist,
+        ALBUMS  => PathType::Album,
+        TRACKS  => PathType::Track,
+        _       => PathType::Other,
     }
 }
 
-pub fn list_medialibrary(path: &Path,
-    _ordering: FoldersOrdering) -> Result<AudioFolder, io::Error> {
-    
-    let files = vec![];
-    let mut subfolders = vec![];
-    let cover = None;
-    let description = None;
-
-    match get_dir_type(path) {
-        PathType::Artist => { 
-            subfolders = get_artists();
+fn get_dir_type(path: &Vec<&str>) -> PathType {
+    match get_root_type(path[0]) {
+        PathType::Artist => match path.len() {
+            1 | 2 => PathType::Artist,
+            3     => PathType::Album,
+            4     => PathType::Track,
+            _     => PathType::Other,
         },
-        PathType::Album => {
-            subfolders = get_artist("Muse");
-        }
-        _ => {},
+        PathType::Album  => match path.len() {
+            1 | 2 => PathType::Album,
+            3     => PathType::Track,
+            _     => PathType::Other,
+        },
+        PathType::Track  => PathType::Track,
+        _                => PathType::Other,
     }
-
-    Ok(AudioFolder {
-        files,
-        subfolders,
-        cover,
-        description,
-    })
 }
 
 pub fn insert_mediadb(subfolders: &mut Vec<AudioFolderShort>) {
-    subfolders.insert(0, AudioFolderShort::from_label("Artists"));
-    subfolders.insert(1, AudioFolderShort::from_label("Albums"));
-    subfolders.insert(2, AudioFolderShort::from_label("Tracks"));
-    subfolders.insert(3, AudioFolderShort::from_label("Playlists"));
+    subfolders.insert(0, AudioFolderShort::from_mdb_root(ARTISTS));
+    subfolders.insert(1, AudioFolderShort::from_mdb_root(ALBUMS));
+    subfolders.insert(2, AudioFolderShort::from_mdb_root(TRACKS));
+    //subfolders.insert(3, AudioFolderShort::from_mdb_root(PLAYLISTS));
 }
