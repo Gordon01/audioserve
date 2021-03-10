@@ -60,7 +60,7 @@ fn create_parser<'a>() -> Parser<'a> {
             .env("AUDIOSERVE_BASE_DIRS")
             .value_delimiter(":")
             .validator_os(is_existing_dir)
-            .help("Root directories for audio books, also refered as collections")
+            .help("Root directories for audio books, also referred as collections")
 
             )
         .arg(Arg::with_name("no-authentication")
@@ -148,6 +148,15 @@ fn create_parser<'a>() -> Parser<'a> {
             .env("AUDIOSERVE_CHAPTERS_FROM_DURATION")
             .help("If long files is presented as chapters, one chapter has x mins [default: 30]")
             )
+        .arg(Arg::with_name("no-dir-collaps")
+            .long("no-dir-collaps")
+            .help("Prevents automatic collaps/skip of directory with single chapterized audio file")
+
+            )
+        .arg(Arg::with_name("ignore-chapters-meta")
+            .long("ignore-chapters-meta")
+            .help("Ignore chapters metadata, so files with chapters will not be presented as folders")
+            )
         .arg(Arg::with_name("url-path-prefix")
         .long("url-path-prefix")
         .takes_value(true)
@@ -189,14 +198,23 @@ fn create_parser<'a>() -> Parser<'a> {
             );
     }
 
-    parser = parser.arg(
+    if cfg!(feature = "shared-positions") {
+        parser = parser.arg(
         Arg::with_name("positions-file")
             .long("positions-file")
             .takes_value(true)
             .validator_os(parent_dir_exists)
             .env("AUDIOSERVE_POSITIONS_FILE")
-            .help("File to save last listened positions"),
-    );
+            .help("File to save last listened positions []"),
+        )
+        .arg(
+            Arg::with_name("positions-ws-timeout")
+            .long("positions-ws-timeout")
+            .validator(is_number)
+            .env("AUDIOSERVE_POSITIONS_WS_TIMEOUT")
+            .help("Timeout in seconds for idle websocket connection use for playback position sharing [default 600s]")
+        );
+    }
 
     if cfg!(feature = "symlinks") {
         parser = parser.arg(
@@ -465,8 +483,20 @@ where
         config.chapters.duration = d.parse().unwrap()
     }
 
+    if is_present_or_env("no-dir-collaps", "AUDIOSERVE_NO_DIR_COLLAPS") {
+        config.no_dir_collaps = true;
+    }
+
+    if is_present_or_env("ignore-chapters-meta", "AUDIOSERVE_IGNORE_CHAPTERS_META") {
+        config.ignore_chapters_meta = true;
+    }
+
     if let Some(positions_file) = args.value_of_os("positions-file") {
         config.positions_file = positions_file.into();
+    }
+
+    if let Some(positions_ws_timeout) = args.value_of("positions-ws-timeout") {
+        config.positions_ws_timeout = Duration::from_secs(positions_ws_timeout.parse().unwrap())
     }
 
     if !no_authentication_confirmed && config.shared_secret.is_none() {
