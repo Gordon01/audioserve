@@ -2,10 +2,11 @@ use std::path::{Path};
 
 use crate::services::types::{AudioFolderShort};
 
-const ARTISTS: &str   = "artists";
-const ALBUMS: &str    = "albums";
-const TRACKS: &str    = "tracks";
-const PLAYLISTS: &str = "playlists";
+pub const ARTISTS: &str   = "artists";
+pub const ALBUMS: &str    = "albums";
+pub const TRACKS: &str    = "tracks";
+//const PLAYLISTS: &str = "playlists";
+pub const DELIMITER: &str = "|";
 
 pub enum PathType {
     Artist,

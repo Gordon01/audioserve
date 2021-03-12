@@ -42,17 +42,21 @@ pub fn get_item(path: &Path,
 
 fn get_artist(path: &LibPath) -> Vec<AudioFolderShort> {
     let mut artist = vec![];
-    match path.artist.as_ref().unwrap().as_str() {
-        "Muse" => {
-            artist.push(AudioFolderShort::from_mdb_root("Showbiz"));
-            artist.push(AudioFolderShort::from_mdb_root("Absolution"));
+    match path.artist.as_ref() {
+        Some(x) => match x.as_str() {
+            "Muse" => {
+                artist.push(AudioFolderShort::from_mdb_root("Showbiz"));
+                artist.push(AudioFolderShort::from_mdb_root("Absolution"));
+            },
+            "Radiohead" => {
+                artist.push(AudioFolderShort::from_mdb_root("OK Computer"));
+                artist.push(AudioFolderShort::from_mdb_root("In Rainbows"));
+            },
+            _ => {},
         },
-        "Radiohead" => {
-            artist.push(AudioFolderShort::from_mdb_root("OK Computer"));
-            artist.push(AudioFolderShort::from_mdb_root("In Rainbows"));
-        },
-        _ => { artist = get_artists() },
-    };
+        None => { artist = get_artists() },
+    }
+
     artist
 }
 
@@ -77,7 +81,10 @@ fn get_track(path: &LibPath) -> Vec<AudioFolderShort> {
 fn get_artists() -> Vec<AudioFolderShort> {
     let artists = ARTISTS.lock().unwrap();
     let as_folders = artists.iter().map(
-        |(x, y)| 
-        AudioFolderShort::from_path_and_name(x.to_string(), PathBuf::from("|artists/Muse"), false));
+        |(x, _y)| 
+        AudioFolderShort::from_path_and_name(
+            x.to_string(), 
+            PathBuf::from([super::paths::DELIMITER, super::paths::ARTISTS, "/", x].concat()), 
+            false));
     as_folders.collect()
 }
